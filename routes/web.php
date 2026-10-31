@@ -49,10 +49,10 @@ Route::middleware('auth')->group(function () {
 
     // 5. Penilaian Calon Penerima
     Route::get('/penilaian', [PenilaianController::class, 'index'])->name('penilaian.index');
-    Route::get('/penilaian/{keluarga}/edit', [PenilaianController::class, 'edit'])->name('penilaian.edit');
-    Route::match(['put', 'post'], '/penilaian/{keluarga}', [PenilaianController::class, 'update'])->name('penilaian.update');
     Route::post('/penilaian/bulk-auto', [PenilaianController::class, 'bulkAutoFill'])->name('penilaian.bulk-auto');
     Route::post('/penilaian/bulk', [PenilaianController::class, 'bulkAutoFill'])->name('penilaian.bulk');
+    Route::get('/penilaian/{keluarga}/edit', [PenilaianController::class, 'edit'])->name('penilaian.edit');
+    Route::match(['put', 'post'], '/penilaian/{keluarga}', [PenilaianController::class, 'update'])->name('penilaian.update');
 
     // 6. Menu Normalisasi
     Route::get('/spk/normalisasi', [SawController::class, 'normalisasi'])->name('spk.normalisasi');
@@ -68,4 +68,3 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
     Route::get('/laporan/pdf', [LaporanController::class, 'downloadPdf'])->name('laporan.pdf');
 });
-

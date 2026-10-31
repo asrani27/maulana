@@ -6,11 +6,21 @@ use App\Models\Keluarga;
 use App\Models\Kriteria;
 use App\Models\Periode;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SpkPkhApplicationTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(DatabaseSeeder::class);
+    }
+
     public function test_root_redirects_to_login(): void
     {
         $response = $this->get('/');
@@ -28,7 +38,7 @@ class SpkPkhApplicationTest extends TestCase
     public function test_user_can_login_with_valid_credentials(): void
     {
         $user = User::where('username', 'admin')->first();
-        if (!$user) {
+        if (! $user) {
             $user = User::create([
                 'nama' => 'Admin Test',
                 'username' => 'admin_test',
@@ -38,10 +48,11 @@ class SpkPkhApplicationTest extends TestCase
             ]);
         }
 
-        $response = $this->post('/login', [
-            'username' => $user->username,
-            'password' => 'admin123',
-        ]);
+        $response = $this->withoutMiddleware(PreventRequestForgery::class)
+            ->post('/login', [
+                'username' => $user->username,
+                'password' => 'admin123',
+            ]);
 
         $response->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($user);
@@ -90,5 +101,125 @@ class SpkPkhApplicationTest extends TestCase
         $response = $this->actingAs($user)->get(route('laporan.pdf', ['periode_id' => $periode?->id]));
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_kriteria_update_bobot_successfully_updates_and_redirects(): void
+    {
+        $user = User::first();
+        $kriterias = Kriteria::orderBy('kode')->get();
+
+        $bobotMap = [];
+        $split = 1.00 / $kriterias->count();
+        foreach ($kriterias as $k) {
+            $bobotMap[$k->id] = round($split, 2);
+        }
+        // Adjust last to equal exact 1.00
+        $sum = array_sum($bobotMap);
+        $lastId = $kriterias->last()->id;
+        $bobotMap[$lastId] += round(1.00 - $sum, 2);
+
+        $response = $this->actingAs($user)
+            ->withoutMiddleware(PreventRequestForgery::class)
+            ->post(route('kriteria.update-bobot'), [
+                'bobot' => $bobotMap,
+            ]);
+
+        $response->assertRedirect(route('kriteria.index'));
+        $response->assertSessionHas('success');
+
+        foreach ($bobotMap as $id => $expectedBobot) {
+            $this->assertEquals((float) $expectedBobot, (float) Kriteria::find($id)->bobot);
+        }
+    }
+
+    public function test_keluarga_create_and_update_lifecycle(): void
+    {
+        $user = User::first();
+
+        $response = $this->actingAs($user)
+            ->withoutMiddleware(PreventRequestForgery::class)
+            ->post(route('keluarga.store'), [
+                'no_kk' => '6303010101990001',
+                'nik_kepala_keluarga' => '6303010101990001',
+                'nama_kepala_keluarga' => 'Ahmad Baru',
+                'jenis_kelamin' => 'Laki-laki',
+                'alamat' => 'Jl. Desa RT 01 RW 01',
+                'rt' => '01',
+                'rw' => '01',
+            ]);
+
+        $response->assertRedirect(route('keluarga.index'));
+        $this->assertDatabaseHas('keluarga', [
+            'no_kk' => '6303010101990001',
+            'nama_kepala_keluarga' => 'Ahmad Baru',
+        ]);
+
+        $keluarga = Keluarga::where('no_kk', '6303010101990001')->first();
+
+        // Update
+        $updateResponse = $this->actingAs($user)
+            ->withoutMiddleware(PreventRequestForgery::class)
+            ->put(route('keluarga.update', $keluarga), [
+                'no_kk' => '6303010101990001',
+                'nik_kepala' => '6303010101990001',
+                'nama_kepala_keluarga' => 'Ahmad Diperbarui',
+                'jenis_kelamin' => 'Laki-laki',
+                'alamat' => 'Jl. Desa RT 01 RW 01 No. 5',
+                'rt' => '01',
+                'rw' => '01',
+            ]);
+
+        $updateResponse->assertRedirect(route('keluarga.index'));
+        $this->assertDatabaseHas('keluarga', [
+            'id' => $keluarga->id,
+            'nama_kepala_keluarga' => 'Ahmad Diperbarui',
+        ]);
+    }
+
+    public function test_penilaian_can_be_updated_and_auto_filled(): void
+    {
+        $user = User::first();
+        $periode = Periode::where('status', 'aktif')->first();
+        $keluarga = Keluarga::first();
+        $kriterias = Kriteria::with('subKriteria')->get();
+
+        $subKriteriaInput = [];
+        foreach ($kriterias as $k) {
+            $subKriteriaInput[$k->id] = $k->subKriteria->first()->id;
+        }
+
+        $response = $this->actingAs($user)
+            ->withoutMiddleware(PreventRequestForgery::class)
+            ->put(route('penilaian.update', $keluarga), [
+                'periode_id' => $periode->id,
+                'sub_kriteria_id' => $subKriteriaInput,
+            ]);
+
+        $response->assertRedirect(route('penilaian.index', ['periode_id' => $periode->id]));
+
+        // Bulk auto-fill test
+        $bulkResponse = $this->actingAs($user)
+            ->withoutMiddleware(PreventRequestForgery::class)
+            ->post(route('penilaian.bulk-auto'), [
+                'periode_id' => $periode->id,
+            ]);
+
+        $bulkResponse->assertRedirect(route('penilaian.index', ['periode_id' => $periode->id]));
+    }
+
+    public function test_spk_simpan_hasil_persists_rankings(): void
+    {
+        $user = User::first();
+        $periode = Periode::where('status', 'aktif')->first();
+
+        $response = $this->actingAs($user)
+            ->withoutMiddleware(PreventRequestForgery::class)
+            ->post(route('spk.simpan'), [
+                'periode_id' => $periode->id,
+                'threshold' => 0.50,
+            ]);
+
+        $response->assertRedirect(route('spk.perangkingan', ['periode_id' => $periode->id]));
+        $response->assertSessionHas('success');
     }
 }

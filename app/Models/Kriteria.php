@@ -35,4 +35,9 @@ class Kriteria extends Model
     {
         return $this->hasMany(Penilaian::class, 'kriteria_id');
     }
+
+    public function getJenisAttribute(): ?string
+    {
+        return $this->attributes['atribut'] ?? null;
+    }
 }

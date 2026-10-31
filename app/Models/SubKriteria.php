@@ -35,4 +35,9 @@ class SubKriteria extends Model
     {
         return $this->hasMany(Penilaian::class, 'sub_kriteria_id');
     }
+
+    public function getNamaSubKriteriaAttribute(): ?string
+    {
+        return $this->attributes['nama_subkriteria'] ?? null;
+    }
 }

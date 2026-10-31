@@ -39,4 +39,9 @@ class Periode extends Model
     {
         return $this->status === 'aktif';
     }
+
+    public function getIsAktifAttribute(): bool
+    {
+        return $this->status === 'aktif';
+    }
 }

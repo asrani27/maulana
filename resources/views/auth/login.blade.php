@@ -18,7 +18,7 @@
             <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-emerald-500/30 mb-3">
                 PKH
             </div>
-            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">SPK SELEKSI PENERIMA PKH</h1>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">SPK PKH - SAW</h1>
             <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider mt-1">Kantor Desa Thaibah Raya</p>
             <p class="text-xs text-slate-500">Kec. Tatah Makmur, Kab. Banjar, Kalsel</p>
         </div>

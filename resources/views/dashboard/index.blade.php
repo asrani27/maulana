@@ -8,7 +8,7 @@
         <div class="inline-block px-2.5 py-0.5 rounded bg-white/10 text-emerald-200 text-xs font-semibold mb-2">
             Desa Thaibah Raya, Kec. Tatah Makmur, Kab. Banjar
         </div>
-        <h1 class="text-xl sm:text-2xl font-bold">SPK Seleksi Calon Penerima PKH (Metode SAW)</h1>
+        <h1 class="text-xl sm:text-2xl font-bold">Dashboard SPK Seleksi Calon Penerima PKH (Metode SAW)</h1>
         <p class="text-xs sm:text-sm text-emerald-100 mt-1">
             Sistem pendukung keputusan berbasis Simple Additive Weighting secara objektif, transparan, dan akuntabel.
         </p>
