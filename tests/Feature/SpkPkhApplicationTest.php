@@ -93,6 +93,44 @@ class SpkPkhApplicationTest extends TestCase
         $this->actingAs($user)->get('/laporan')->assertStatus(200);
     }
 
+    public function test_authenticated_user_can_view_periode_page_and_manage_periodes(): void
+    {
+        $user = User::first() ?? User::factory()->create(['role' => 'admin']);
+
+        // 1. Visit index page without Undefined variable $periodeList error
+        $response = $this->actingAs($user)->get(route('periode.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Master Periode Penyaluran');
+
+        // 2. Create new periode
+        $storeResponse = $this->actingAs($user)
+            ->withoutMiddleware(PreventRequestForgery::class)
+            ->post(route('periode.store'), [
+                'nama_periode' => 'Tahap 3 Tahun 2026',
+                'tahun' => 2026,
+                'is_aktif' => '1',
+            ]);
+
+        $storeResponse->assertRedirect(route('periode.index'));
+        $this->assertDatabaseHas('periode', [
+            'nama_periode' => 'Tahap 3 Tahun 2026',
+            'status' => 'aktif',
+        ]);
+
+        $newPeriode = Periode::where('nama_periode', 'Tahap 3 Tahun 2026')->first();
+
+        // 3. Activate another periode
+        $firstPeriode = Periode::where('id', '!=', $newPeriode->id)->first();
+        if ($firstPeriode) {
+            $activateResponse = $this->actingAs($user)
+                ->withoutMiddleware(PreventRequestForgery::class)
+                ->post(route('periode.activate', $firstPeriode));
+            $activateResponse->assertRedirect(route('periode.index'));
+            $this->assertEquals('aktif', $firstPeriode->fresh()->status);
+            $this->assertEquals('arsip', $newPeriode->fresh()->status);
+        }
+    }
+
     public function test_laporan_pdf_download_returns_valid_pdf_response(): void
     {
         $user = User::first();
@@ -183,6 +221,12 @@ class SpkPkhApplicationTest extends TestCase
         $keluarga = Keluarga::first();
         $kriterias = Kriteria::with('subKriteria')->get();
 
+        // Test opening edit page before and after assessment exists
+        $editResponseBefore = $this->actingAs($user)
+            ->get(route('penilaian.edit', ['keluarga' => $keluarga->id, 'periode_id' => $periode->id]));
+        $editResponseBefore->assertStatus(200);
+        $editResponseBefore->assertSee('Input Penilaian Calon Penerima');
+
         $subKriteriaInput = [];
         foreach ($kriterias as $k) {
             $subKriteriaInput[$k->id] = $k->subKriteria->first()->id;
@@ -196,6 +240,12 @@ class SpkPkhApplicationTest extends TestCase
             ]);
 
         $response->assertRedirect(route('penilaian.index', ['periode_id' => $periode->id]));
+
+        // Test opening edit page after assessment is saved (ensures number_format string crash is resolved)
+        $editResponseAfter = $this->actingAs($user)
+            ->get(route('penilaian.edit', ['keluarga' => $keluarga->id, 'periode_id' => $periode->id]));
+        $editResponseAfter->assertStatus(200);
+        $editResponseAfter->assertSee('Input Penilaian Calon Penerima');
 
         // Bulk auto-fill test
         $bulkResponse = $this->actingAs($user)

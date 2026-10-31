@@ -82,6 +82,6 @@ class Keluarga extends Model
             ? $this->penilaian->firstWhere('kriteria.kode', 'C4')
             : $this->penilaian()->whereHas('kriteria', fn ($q) => $q->where('kode', 'C4'))->with('subKriteria')->first();
 
-        return $c4?->subKriteria?->nama_subkriteria ?? 0;
+        return $c4?->subKriteria?->nama_subkriteria ?? '-';
     }
 }

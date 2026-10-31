@@ -67,7 +67,7 @@
 
             <div>
                 <label class="block font-bold text-slate-700 uppercase mb-1">Penghasilan Bulanan (Rp)</label>
-                <input type="number" name="penghasilan_bulanan" value="{{ old('penghasilan_bulanan', (int)$keluarga->penghasilan_bulanan) }}" min="0" step="10000"
+                <input type="number" name="penghasilan_bulanan" value="{{ old('penghasilan_bulanan', is_numeric($keluarga->penghasilan_bulanan) ? (int) $keluarga->penghasilan_bulanan : 0) }}" min="0" step="10000"
                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-emerald-500 font-mono">
             </div>
 

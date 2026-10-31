@@ -16,7 +16,9 @@ class PeriodeController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        return view('periode.index', compact('periodes'));
+        $periodeList = $periodes;
+
+        return view('periode.index', compact('periodes', 'periodeList'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -24,14 +26,23 @@ class PeriodeController extends Controller
         $validated = $request->validate([
             'nama_periode' => ['required', 'string', 'max:100'],
             'tahun' => ['required', 'integer', 'min:2020', 'max:2050'],
-            'status' => ['required', 'in:aktif,arsip'],
+            'status' => ['nullable', 'in:aktif,arsip'],
+            'is_aktif' => ['nullable'],
         ]);
 
-        if ($validated['status'] === 'aktif') {
+        $status = $request->filled('status')
+            ? $request->input('status')
+            : ($request->boolean('is_aktif') ? 'aktif' : 'arsip');
+
+        if ($status === 'aktif') {
             Periode::where('status', 'aktif')->update(['status' => 'arsip']);
         }
 
-        Periode::create($validated);
+        Periode::create([
+            'nama_periode' => $validated['nama_periode'],
+            'tahun' => $validated['tahun'],
+            'status' => $status,
+        ]);
 
         return redirect()->route('periode.index')->with('success', 'Periode berhasil ditambahkan.');
     }

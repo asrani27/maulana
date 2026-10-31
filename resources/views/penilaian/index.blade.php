@@ -23,7 +23,7 @@
         <form method="GET" action="{{ route('penilaian.index') }}" class="flex items-center gap-2">
             <span class="text-xs font-bold text-slate-700">Periode:</span>
             <select name="periode_id" onchange="this.form.submit()" class="px-2.5 py-1 rounded border border-slate-300 text-xs font-semibold">
-                @foreach($periodeList as $p)
+                @foreach(($periodeList ?? $periodes ?? []) as $p)
                     <option value="{{ $p->id }}" {{ ($periodeAktif && $periodeAktif->id == $p->id) ? 'selected' : '' }}>
                         {{ $p->nama_periode }} {{ $p->is_aktif ? '(Aktif)' : '' }}
                     </option>

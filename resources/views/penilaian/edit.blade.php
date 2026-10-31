@@ -28,7 +28,15 @@
         </div>
         <div>
             <span class="text-slate-500 block">Penghasilan:</span>
-            <span class="font-bold text-slate-800">Rp {{ number_format($keluarga->penghasilan_bulanan, 0, ',', '.') }}</span>
+            <span class="font-bold text-slate-800">
+                @if(is_numeric($keluarga->penghasilan_bulanan))
+                    Rp {{ number_format((float) $keluarga->penghasilan_bulanan, 0, ',', '.') }}
+                @elseif(!empty($keluarga->penghasilan_bulanan) && $keluarga->penghasilan_bulanan !== '0')
+                    {{ $keluarga->penghasilan_bulanan }}
+                @else
+                    -
+                @endif
+            </span>
         </div>
     </div>
 
@@ -56,7 +64,7 @@
                         <option value="">-- Pilih Nilai Sub Kriteria --</option>
                         @foreach($k->subKriteria as $sub)
                             <option value="{{ $sub->id }}" {{ $selectedSubId == $sub->id ? 'selected' : '' }}>
-                                {{ $sub->nama_sub_kriteria }} (Skala: {{ number_format($sub->nilai, 2) }})
+                                {{ $sub->nama_sub_kriteria }} (Skala: {{ is_numeric($sub->nilai) ? number_format((float) $sub->nilai, 2) : $sub->nilai }})
                             </option>
                         @endforeach
                     </select>
